@@ -34,6 +34,7 @@ class Bot(object):
 		new_consersation = True
 
 		for text, author in history:
+			bot_reply = True
 			logging.info("text: %s", text)
 			logging.info("author: %s", author)
 			if author == 'bot':
@@ -50,13 +51,18 @@ class Bot(object):
 					possible_answers.sort()
 					new_consersation = False
 				else:
-					if bot_asked_aboy_restart and text == u"Sí":
-						tree = self.tree
-						response_text = tree['say']
-						possible_answers = tree['answers'].keys()
-						possible_answers.sort()
-						self.users_dao.remove_user_events(user_id)
-						break
+					if bot_asked_aboy_restart:
+						if text == u"Sí":
+							tree = self.tree
+							response_text = tree['say']
+							possible_answers = tree['answers'].keys()
+							possible_answers.sort()
+							self.users_dao.remove_user_events(user_id)
+							break
+						elif text == u"No":
+							bot_reply = False
+							continue
+
 					key = get_key_if_valid(text, tree)
 					if key is None:
 						response_text = DEFAULT_RESPONSE
@@ -70,8 +76,9 @@ class Bot(object):
 						else:
 							possible_answers = None
 
-		self.send_callback(user_id, response_text, possible_answers)
-		self.users_dao.add_user_events(user_id, "bot", response_text)
+		if bot_reply:
+			self.send_callback(user_id, response_text, possible_answers)
+			self.users_dao.add_user_events(user_id, "bot", response_text)
 
 def get_key_if_valid(text, dictionary):
 	for key in dictionary:
